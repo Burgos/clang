@@ -67,6 +67,7 @@ static void LLVMErrorHandler(void *UserData, const std::string &Message,
   exit(GenCrashDiag ? 70 : 1);
 }
 
+#undef LINK_POLLY_INTO_TOOLS
 #ifdef LINK_POLLY_INTO_TOOLS
 namespace polly {
 void initializePollyPasses(llvm::PassRegistry &Registry);

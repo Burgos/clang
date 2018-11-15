@@ -326,7 +326,7 @@ configure_file(
 
 # Add appropriate flags for GCC
 if (LLVM_COMPILER_IS_GCC_COMPATIBLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-common -Woverloaded-virtual")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ULINK_POLLY_INTO_TOOLS -fno-common -Woverloaded-virtual")
   if (NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
   endif ()

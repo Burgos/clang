@@ -178,6 +178,17 @@ clang_getCompletionFixIt
 clang_getCompletionNumAnnotations
 clang_getCompletionParent
 clang_getCompletionPriority
+clang_getCursorSourceFile
+clang_getOperatorString
+clang_getBinaryOpCode
+clang_getUnaryOpCode
+clang_getLiteralString
+clang_getForStmtInit
+clang_getForStmtCond
+clang_getForStmtInc
+clang_getForStmtBody
+clang_getFriendCursor
+clang_getFriendType
 clang_getCursor
 clang_getCursorAvailability
 clang_getCursorCompletionString

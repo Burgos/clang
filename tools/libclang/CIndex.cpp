@@ -4221,6 +4221,33 @@ const char *clang_getFileContents(CXTranslationUnit TU, CXFile file,
   return buf->getBufferStart();
 }
 
+//-----------------!!! patch begin
+
+static const FileEntry *getFileEntryFromSourceLocation(SourceManager &SMgr,SourceLocation SLoc) 
+{
+  FileID FID;
+  if (SLoc.isFileID())
+    FID = SMgr.getFileID(SLoc);
+  else
+    FID = SMgr.getDecomposedSpellingLoc(SLoc).first;
+  return SMgr.getFileEntryForID(FID);
+}
+
+CXFile clang_getCursorSourceFile(CXCursor C)
+{
+  if (!clang_isDeclaration(C.kind)) return 0;
+
+  NamedDecl *ND = (NamedDecl*)getCursorDecl(C);
+  SourceManager &SourceMgr = ND->getASTContext().getSourceManager();
+  
+  CXSourceLocation CXLoc = clang_getCursorLocation(C);
+  SourceLocation Loc = cxloc::translateSourceLocation(CXLoc);
+  
+  return (void *)getFileEntryFromSourceLocation(SourceMgr,Loc);
+}
+
+//-----------------!!! end
+
 unsigned clang_isFileMultipleIncludeGuarded(CXTranslationUnit TU,
                                             CXFile file) {
   if (isNotUsableTU(TU)) {
@@ -5838,6 +5865,159 @@ CXSourceLocation clang_getCursorLocation(CXCursor C) {
   return cxloc::translateSourceLocation(getCursorContext(C), Loc);
 }
 
+CXString clang_getOperatorString(CXCursor C) 
+{
+
+  if (C.kind == CXCursor_BinaryOperator) {
+    BinaryOperator *Op = (clang::BinaryOperator*)getCursorExpr(C);
+    return cxstring::createDup(clang::BinaryOperator::getOpcodeStr(Op->getOpcode()));
+  }
+  
+  if (C.kind == CXCursor_CompoundAssignOperator) {
+    CompoundAssignOperator *Op = (clang::CompoundAssignOperator*)getCursorExpr(C);
+    return cxstring::createDup(clang::BinaryOperator::getOpcodeStr(Op->getOpcode()));
+  }
+
+  if (C.kind == CXCursor_UnaryOperator) {
+    UnaryOperator *Op = (clang::UnaryOperator*)getCursorExpr(C);
+    return cxstring::createDup(clang::UnaryOperator::getOpcodeStr(Op->getOpcode()));
+  }
+  
+  return cxstring::createEmpty();
+}
+
+enum CXBinaryOpCode clang_getBinaryOpCode(CXCursor C) 
+{
+  if (C.kind == CXCursor_BinaryOperator) {
+    BinaryOperator *Op = (clang::BinaryOperator*)getCursorExpr(C);
+    return static_cast<CXBinaryOpCode>(Op->getOpcode());
+  }
+  if (C.kind == CXCursor_CompoundAssignOperator) {
+    CompoundAssignOperator *Op = (clang::CompoundAssignOperator*)getCursorExpr(C);
+    return static_cast<CXBinaryOpCode>(Op->getOpcode());
+  }
+  return BO_Unknown;
+}
+
+enum CXUnaryOpCode clang_getUnaryOpCode(CXCursor C) 
+{
+  if (C.kind == CXCursor_UnaryOperator) {
+    UnaryOperator *Op = (clang::UnaryOperator*)getCursorExpr(C);
+    return static_cast<CXUnaryOpCode>(Op->getOpcode());
+  }
+  return UO_Unknown;
+}
+
+CXString clang_getLiteralString(CXCursor C) 
+{
+
+  if (C.kind == CXCursor_IntegerLiteral) {
+    IntegerLiteral *Li = (clang::IntegerLiteral*)getCursorExpr(C);
+    return cxstring::createDup(Li->getValue().toString(10, true));
+  }
+
+  if (C.kind == CXCursor_FloatingLiteral) {
+    FloatingLiteral *Fi = (clang::FloatingLiteral*)getCursorExpr(C);
+    llvm::SmallString<1024> S;
+    Fi->getValue().toString(S);
+    return cxstring::createDup(S.c_str());
+  }
+
+  if (C.kind == CXCursor_CharacterLiteral) {
+    CharacterLiteral *Cl = (clang::CharacterLiteral*)getCursorExpr(C);
+    char c[2];
+    c[0] = (char)Cl->getValue();c[1] = '\0';
+    return cxstring::createDup(c);
+  }
+
+  if (C.kind == CXCursor_StringLiteral) {
+    StringLiteral *Sl = (clang::StringLiteral*)getCursorExpr(C);
+    return cxstring::createDup(Sl->getBytes());
+  }
+  
+  if (C.kind == CXCursor_CXXBoolLiteralExpr) {
+    CXXBoolLiteralExpr *Bl = (clang::CXXBoolLiteralExpr*)getCursorExpr(C);
+    return cxstring::createDup(Bl->getValue()?"true":"false");
+  }
+
+  return cxstring::createEmpty();
+}
+
+CXCursor clang_getForStmtInit(CXCursor C)
+{
+	if(C.kind!=CXCursor_ForStmt) return MakeCXCursorInvalid(CXCursor_InvalidCode);
+	
+	ForStmt* Node=(ForStmt*)(C.data[1]);
+	const CXTranslationUnit tu=(const CXTranslationUnit)(C.data[2]);
+	
+	Stmt* init=Node->getInit();
+	if (init) return MakeCXCursor(init,0,tu);
+  	else return MakeCXCursorInvalid(CXCursor_NoDeclFound);
+}
+
+CXCursor clang_getForStmtCond(CXCursor C)
+{
+	if(C.kind!=CXCursor_ForStmt) return MakeCXCursorInvalid(CXCursor_InvalidCode);
+	
+	ForStmt* Node=(ForStmt*)(C.data[1]);
+	const CXTranslationUnit tu=(const CXTranslationUnit)(C.data[2]);
+	
+	Stmt* cond=Node->getCond();
+	if (cond) return MakeCXCursor(cond,0,tu);
+  	else return MakeCXCursorInvalid(CXCursor_NoDeclFound);
+}
+
+CXCursor clang_getForStmtInc(CXCursor C)
+{
+	if(C.kind!=CXCursor_ForStmt) return MakeCXCursorInvalid(CXCursor_InvalidCode);
+	
+	ForStmt* Node=(ForStmt*)(C.data[1]);
+	const CXTranslationUnit tu=(const CXTranslationUnit)(C.data[2]);
+	
+	Stmt* inc=Node->getInc();
+	if (inc) return MakeCXCursor(inc,0,tu);
+  	else return MakeCXCursorInvalid(CXCursor_NoDeclFound);
+}
+
+CXCursor clang_getForStmtBody(CXCursor C)
+{
+	if(C.kind!=CXCursor_ForStmt) return MakeCXCursorInvalid(CXCursor_InvalidCode);
+	
+	ForStmt* Node=(ForStmt*)(C.data[1]);
+	const CXTranslationUnit tu=(const CXTranslationUnit)(C.data[2]);
+	
+	Stmt* body=Node->getBody();
+	if (body) return MakeCXCursor(body,0,tu);
+  	else return MakeCXCursorInvalid(CXCursor_NoDeclFound);
+}
+
+CXCursor clang_getFriendCursor(CXCursor C)
+{
+	const Decl *D = getCursorDecl(C);
+	if(!D) return MakeCXCursorInvalid(CXCursor_NoDeclFound);
+	
+	const CXTranslationUnit tu = (const CXTranslationUnit)(C.data[2]);
+	
+	NamedDecl *Friend = cast<FriendDecl>(D)->getFriendDecl();
+	if(Friend) return MakeCXCursor(Friend, tu);
+	
+ 	return MakeCXCursorInvalid(CXCursor_InvalidCode);
+}
+
+CXString clang_getFriendType(CXCursor C)
+{
+	const Decl *D = getCursorDecl(C);
+	if(!D) return cxstring::createDup("no_decl");
+
+	TypeSourceInfo *type = cast<FriendDecl>(D)->getFriendType();
+	if(type) 
+	{
+		PrintingPolicy Policy = getCursorContext(C).getPrintingPolicy();
+		return cxstring::createDup(type->getType().getAsString(Policy));
+	}
+	
+	return cxstring::createDup("unknown");
+}
 } // end extern "C"
 
 CXCursor cxcursor::getCursor(CXTranslationUnit TU, SourceLocation SLoc) {

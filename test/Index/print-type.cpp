@@ -108,6 +108,7 @@ using baz = C<A<void>>;
 // CHECK: DeclRefExpr=z:22:35 [type=outer::inner::Bar::FooType] [typekind=Typedef] [canonicaltype=int] [canonicaltypekind=Int] [isPOD=1]
 // CHECK: ReturnStmt= [type=] [typekind=Invalid] [isPOD=0]
 // CHECK: BinaryOperator= [type=int *] [typekind=Pointer] [isPOD=1] [pointeetype=int] [pointeekind=Int]
+// CHECK: BinaryOperator+= [type=int *] [typekind=Pointer] [isPOD=1] [pointeetype=int] [pointeekind=Int]
 // CHECK: UnexposedExpr=p:22:15 [type=int *] [typekind=Pointer] [isPOD=1] [pointeetype=int] [pointeekind=Int]
 // CHECK: DeclRefExpr=p:22:15 [type=int *] [typekind=Pointer] [isPOD=1] [pointeetype=int] [pointeekind=Int]
 // CHECK: UnexposedExpr=z:22:35 [type=outer::inner::Bar::FooType] [typekind=Typedef] [canonicaltype=int] [canonicaltypekind=Int] [isPOD=1]

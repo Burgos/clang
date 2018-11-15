@@ -7,6 +7,7 @@ from clang.cindex import CursorKind
 from clang.cindex import TemplateArgumentKind
 from clang.cindex import TranslationUnit
 from clang.cindex import TypeKind
+from clang.cindex import BinaryOperator
 from .util import get_cursor
 from .util import get_cursors
 from .util import get_tu

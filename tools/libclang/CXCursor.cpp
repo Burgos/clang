@@ -1151,6 +1151,21 @@ int clang_Cursor_getNumArguments(CXCursor C) {
   return -1;
 }
 
+// Gets the function body from the function declaration
+CXCursor clang_Cursor_getFunctionBody(CXCursor C)
+{
+  if (clang_isDeclaration(C.kind)) {
+    const Decl *D = cxcursor::getCursorDecl(C);
+    if (const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(D)) {
+        if (FD->getBody(FD))
+        {
+            return cxcursor::MakeCXCursor(FD, cxcursor::getCursorTU(C));
+        }
+    }
+  }
+  return clang_getNullCursor();
+}
+
 CXCursor clang_Cursor_getArgument(CXCursor C, unsigned i) {
   if (clang_isDeclaration(C.kind)) {
     const Decl *D = cxcursor::getCursorDecl(C);
